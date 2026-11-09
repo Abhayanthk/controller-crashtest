@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/checks"
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/checks"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
 )
 
-// Report is everything one `faultlab run` found.
+// Report is everything one `crashtest run` found.
 type Report struct {
 	Tool      string          `json:"tool"`
 	Target    string          `json:"target"`
@@ -37,7 +37,7 @@ type Scenario struct {
 
 // New starts a report.
 func New(target string, scenarios []lab.Scenario, cs []checks.Check) *Report {
-	r := &Report{Tool: "kthena-faultlab", Target: target, Kthena: KthenaVersion(), Started: time.Now(), Checks: cs}
+	r := &Report{Tool: "controller-crashtest", Target: target, Kthena: KthenaVersion(), Started: time.Now(), Checks: cs}
 	for _, s := range scenarios {
 		r.Scenarios = append(r.Scenarios, Scenario{s.Name, s.About})
 	}
@@ -103,7 +103,7 @@ func (r *Report) Print(w io.Writer, color bool) {
 	for _, res := range r.Results {
 		runs += res.Runs
 	}
-	fmt.Fprintf(w, "%skthena-faultlab%s · target %s · kthena %s\n", c.bold, c.reset, r.Target, r.Kthena)
+	fmt.Fprintf(w, "%scontroller-crashtest%s · target %s · kthena %s\n", c.bold, c.reset, r.Target, r.Kthena)
 	fmt.Fprintf(w, "%d scenarios · %d checks · %d runs · %s\n\n", len(r.Scenarios), len(r.Checks), runs, time.Duration(r.Seconds*float64(time.Second)).Round(time.Second))
 
 	byCell := map[string][]checks.Result{}

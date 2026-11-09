@@ -16,8 +16,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // Check is one kind of test.
@@ -46,7 +46,7 @@ const (
 	Fail  Status = "fail"  // a rule is broken
 	Flaky Status = "flaky" // broken in some runs of the same case only
 	Skip  Status = "skip"  // the case did not apply (e.g. write k never happened)
-	Error Status = "error" // faultlab or the scenario itself failed
+	Error Status = "error" // crashtest or the scenario itself failed
 )
 
 // Result is the verdict on one case.
@@ -66,7 +66,7 @@ type Result struct {
 
 // Runner runs one scenario under a plan. The CLI runs each in a child
 // process, so a panic in the controller becomes a finding instead of
-// stopping faultlab; tests run them in-process.
+// stopping crashtest; tests run them in-process.
 type Runner func(scenario string, plan lab.Plan) lab.Outcome
 
 // Suite runs checks over scenarios.
@@ -346,7 +346,7 @@ func judgeFault(j job, out *lab.Outcome) Result {
 }
 
 // panicked starts the Problem of a run whose controller process died
-// (see cmd/faultlab); the rest of the Problem is the panic and its stack.
+// (see cmd/crashtest); the rest of the Problem is the panic and its stack.
 const panicked = ProcessCrashed
 
 // ProcessCrashed starts the Problem of a run whose child process died.
@@ -391,9 +391,9 @@ func crashSummary(problem string) string {
 	return "the controller process panicked"
 }
 
-// runError reports problems that are faultlab's or the scenario's, not the controller's.
+// runError reports problems that are crashtest's or the scenario's, not the controller's.
 func runError(out *lab.Outcome) bool {
-	for _, p := range []string{"setup:", "change:", "start controller", "fault ", "unknown fault", "faultlab:"} {
+	for _, p := range []string{"setup:", "change:", "start controller", "fault ", "unknown fault", "crashtest:"} {
 		if strings.HasPrefix(out.Problem, p) {
 			return true
 		}

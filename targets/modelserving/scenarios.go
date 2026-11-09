@@ -10,11 +10,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
-// Scenarios are the user stories faultlab drives the controller through.
+// Scenarios are the user stories crashtest drives the controller through.
 // Each starts from a settled world (Setup) and makes one change (Change);
 // the checks break things while the controller handles that change.
 func (target) Scenarios() []lab.Scenario {

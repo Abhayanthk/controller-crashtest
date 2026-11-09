@@ -111,7 +111,7 @@ func (w *World) QuietFor(d time.Duration) bool {
 
 // Mark adds a phase marker ("setup", "change", "crash", ...) to the log.
 func (w *World) Mark(phase string) {
-	w.log.add(Entry{Actor: "faultlab", Verb: "mark", Result: phase}, w.start)
+	w.log.add(Entry{Actor: "crashtest", Verb: "mark", Result: phase}, w.start)
 }
 
 func (w *World) kindOf(obj runtime.Object) (*Kind, error) {
@@ -124,7 +124,7 @@ func (w *World) kindOf(obj runtime.Object) (*Kind, error) {
 			return k, nil
 		}
 	}
-	return nil, fmt.Errorf("faultlab: %T is not served by this world (add its Kind to the target)", obj)
+	return nil, fmt.Errorf("crashtest: %T is not served by this world (add its Kind to the target)", obj)
 }
 
 // KindFor returns the kind served for a resource, or nil.

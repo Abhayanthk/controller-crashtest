@@ -2,7 +2,7 @@
 // a scenario, with or without a fault.
 //
 //   - target.go  what a controller under test must provide (Target)
-//   - probe.go   how faultlab sees inside a client-go controller's work queue
+//   - probe.go   how crashtest sees inside a client-go controller's work queue
 //   - run.go     one run: set up, change, break, restart, settle, snapshot
 package lab
 
@@ -10,11 +10,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // Target is one controller under test. To add a controller, write a package
-// under targets/ that returns a Target, and list it in cmd/faultlab.
+// under targets/ that returns a Target, and list it in cmd/crashtest.
 type Target interface {
 	// Name is the short name used on the command line, e.g. "modelserving".
 	Name() string

@@ -235,7 +235,7 @@ func (w *World) patch(actor string, k *Kind, ns, name string, pt types.PatchType
 			newJSON, err = strategicpatch.StrategicMergePatch(oldJSON, data, schemaObj)
 		}
 	default:
-		err = apierrors.NewBadRequest(fmt.Sprintf("faultlab: patch type %q is not supported", pt))
+		err = apierrors.NewBadRequest(fmt.Sprintf("crashtest: patch type %q is not supported", pt))
 	}
 	if err != nil {
 		if !apierrors.IsUnsupportedMediaType(err) && apierrors.ReasonForError(err) == metav1.StatusReasonUnknown {

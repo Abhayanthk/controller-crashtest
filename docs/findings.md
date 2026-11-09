@@ -8,7 +8,7 @@ case in it belongs to F1, F2, F4 or F6 (F3 shows as warnings; F5 only in
 traces).
 
 None of these has been filed upstream yet. Each one still needs proof on a
-real cluster (kind) before it is reported; faultlab's pretend cluster is
+real cluster (kind) before it is reported; crashtest's pretend cluster is
 close to a real one, not the same.
 
 **Severity**: *high* = serving capacity is lost and does not come back by
@@ -41,7 +41,7 @@ unrelated event happens to queue this ModelServing.
 **Reproduce.**
 
 ```bash
-./bin/faultlab trace -scenario coordinated-roles -fault crash:13
+./bin/crashtest trace -scenario coordinated-roles -fault crash:13
 ```
 
 ```text
@@ -55,7 +55,7 @@ kubelet       delete  pods   default/demo-0-prefill-0-0   deleted
 kubelet       delete  pods   default/demo-0-prefill-0-1   deleted
 (controller-2 does nothing more: the run settles with three pods missing)
 --- resync ---
-controller-2  create  pods   default/demo-0-prefill-0-0   created   <- only after faultlab forces a reconcile
+controller-2  create  pods   default/demo-0-prefill-0-0   created   <- only after crashtest forces a reconcile
 ```
 
 Fails in all 3 runs of crash points 5, 13 and 14, in two shapes:
@@ -70,7 +70,7 @@ Fails in all 3 runs of crash points 5, 13 and 14, in two shapes:
   old image. Half the capacity is gone and the update never finishes.
 
 ```bash
-./bin/faultlab trace -scenario coordinated-roles -fault crash:5
+./bin/crashtest trace -scenario coordinated-roles -fault crash:5
 ```
 
 **Why** (with `-klog 4`, the controller's own log shows each step):
@@ -111,7 +111,7 @@ and another restart, for as long as the ModelServing stays at 0.
 **Reproduce.**
 
 ```bash
-./bin/faultlab trace -scenario scale-to-zero -fault crash:9
+./bin/crashtest trace -scenario scale-to-zero -fault crash:9
 ```
 
 Fails in all 3 runs of 8 of the 18 crash points (every crash after the
@@ -144,10 +144,10 @@ if `CurrentReplicas` already equals `UpdatedReplicas`
 ModelServing then sends a status update that changes nothing. The API server
 skips storing it, but the request still costs an API call and client QPS
 budget. Seen in 28 of 31 scenarios (resync and restart checks). This was the
-first finding of the spike that led to faultlab.
+first finding of the spike that led to crashtest.
 
 ```bash
-./bin/faultlab trace -scenario create
+./bin/crashtest trace -scenario create
 ```
 
 ## F4. `revisionHistoryLimit` is not enforced (low)
@@ -179,7 +179,7 @@ reconciles in the trace below; with a real 30 s grace period, more). The
 identity check keeps it safe; the cost is error noise and backoff.
 
 ```bash
-./bin/faultlab trace -scenario role-rolling-update -fault crash:4
+./bin/crashtest trace -scenario role-rolling-update -fault crash:4
 ```
 
 ## F6. One failed API call cancels crash recovery (medium)
@@ -196,7 +196,7 @@ the pod is treated as healthy, and the Role is never recreated.
 **Reproduce.**
 
 ```bash
-./bin/faultlab trace -scenario recover-role -fault error:0
+./bin/crashtest trace -scenario recover-role -fault error:0
 ```
 
 ```text
@@ -234,12 +234,12 @@ two extra groups and, in the same round, the group it keeps (to update it),
 so no group can serve until the new one is Ready. With `replicas: 1` the
 default `maxUnavailable` of 1 (`utils/utils.go:598`) allows this, but the
 two extra old groups could have kept serving until then. Shown by
-`./bin/faultlab trace -scenario scale-down-mid-update -fault interrupt:0`
+`./bin/crashtest trace -scenario scale-down-mid-update -fault interrupt:0`
 (gauge "serving ServingGroups: lowest 0").
 
-## False alarms faultlab caught in itself
+## False alarms crashtest caught in itself
 
-Each was found while checking a finding, fixed in faultlab, and is the
+Each was found while checking a finding, fixed in crashtest, and is the
 reason for a rule in [how-it-works.md](how-it-works.md):
 
 | Looked like | Was | Fix |

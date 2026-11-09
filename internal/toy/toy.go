@@ -1,4 +1,4 @@
-// Package toy is a tiny controller with bugs you can switch on. faultlab's
+// Package toy is a tiny controller with bugs you can switch on. crashtest's
 // own tests run the checks against it: each planted bug must be caught, and
 // the bug-free version must pass. It is also the smallest example of a
 // target (see docs/adding-a-controller.md).
@@ -27,8 +27,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // Bugs are the mistakes the controller can be told to make.

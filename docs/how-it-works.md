@@ -1,6 +1,6 @@
-# How faultlab works
+# How crashtest works
 
-faultlab runs kthena's **real controller code** against a **pretend
+crashtest runs kthena's **real controller code** against a **pretend
 Kubernetes cluster**, breaks things on purpose while the controller works,
 and checks that the controller still ends up in the right place.
 
@@ -19,11 +19,11 @@ flowchart LR
 
 client-go ships a fake clientset for unit tests. It stores objects in memory
 but skips most of what a real API server does, so code that depends on those
-rules is never tested. faultlab keeps the fake clientset (the controller still
+rules is never tested. crashtest keeps the fake clientset (the controller still
 calls `client.CoreV1().Pods(ns).Create(...)`), but answers every call itself,
 with the rules a real API server applies:
 
-| Rule | Plain fake clientset | faultlab |
+| Rule | Plain fake clientset | crashtest |
 | --- | --- | --- |
 | `resourceVersion` changes on every write; an update with an old one gets **409 Conflict** | never | yes |
 | `uid` set on create; delete preconditions check it | never | yes |
@@ -67,10 +67,10 @@ running can still write, and its replacement works normally.
 
 ## 3. Knowing when the controller is done
 
-A controller has no "I'm finished" signal. faultlab looks inside it
+A controller has no "I'm finished" signal. crashtest looks inside it
 (`internal/lab/probe.go`): it swaps the controller's work queue for an
 instrumented one and wraps its sync function. Both are unexported fields, so
-this uses Go reflection; if kthena renames them, faultlab stops with an error
+this uses Go reflection; if kthena renames them, crashtest stops with an error
 that names the field.
 
 The controller counts as **idle** when, for 150 ms in a row:
@@ -113,10 +113,10 @@ if it ended right.
 
 ## 5. Each run is its own process
 
-`faultlab run` starts every run as a child process (`faultlab case ...`):
+`crashtest run` starts every run as a child process (`crashtest case ...`):
 
 - a **panic** in the controller kills only that child, and becomes a finding
-  with its stack trace instead of stopping faultlab;
+  with its stack trace instead of stopping crashtest;
 - the child runs with `KUBE_CACHE_MUTATION_DETECTOR=true`, so a controller
   that changes an object it got from an informer's cache panics, and that
   becomes a finding too;
@@ -127,7 +127,7 @@ if it ended right.
 A false alarm sent to kthena costs trust, so:
 
 - the end state is cleaned before comparing: uids, resourceVersions,
-  timestamps and faultlab's own annotations differ between any two runs;
+  timestamps and crashtest's own annotations differ between any two runs;
 - conditions whose status is False are not compared: whether an old False
   condition is still listed depends on history, not on the current state;
 - the interrupt check names ServingGroups by order (first, second, ...),
@@ -143,7 +143,7 @@ A false alarm sent to kthena costs trust, so:
   differently, every comparison for that scenario is suspect.
 
 Still: every finding is a suspect until the log shows the controller made the
-bad write, and you can reproduce it with `faultlab trace`.
+bad write, and you can reproduce it with `crashtest trace`.
 
 ## 7. Limits
 

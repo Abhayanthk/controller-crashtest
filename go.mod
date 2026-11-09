@@ -1,4 +1,4 @@
-module github.com/abhayanthk/kthena-faultlab
+module github.com/abhayanthk/controller-crashtest
 
 go 1.26.0
 

@@ -10,12 +10,12 @@ import (
 type Entry struct {
 	Seq    int     `json:"seq"`
 	At     float64 `json:"at"`               // seconds since the world was created
-	Actor  string  `json:"actor"`            // "controller-1", "user", "kubelet", "gc", "faultlab"
+	Actor  string  `json:"actor"`            // "controller-1", "user", "kubelet", "gc", "crashtest"
 	Verb   string  `json:"verb"`             // create, update, patch, delete, event, mark
 	Kind   string  `json:"kind,omitempty"`   // resource, with "/status" for the status subresource
 	Object string  `json:"object,omitempty"` // namespace/name
 	Result string  `json:"result"`           // created, updated, no change, deleting, deleted, or the error
-	Fault  string  `json:"fault,omitempty"`  // set when faultlab injected this result
+	Fault  string  `json:"fault,omitempty"`  // set when crashtest injected this result
 }
 
 // Changed reports whether the call changed something stored.

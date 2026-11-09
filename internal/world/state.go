@@ -14,7 +14,7 @@ import (
 
 // State is what a run built: every object of the kinds marked Compare,
 // cleaned of the values that differ between two correct runs anyway
-// (uids, resourceVersions, timestamps, pod IPs, faultlab's own annotations,
+// (uids, resourceVersions, timestamps, pod IPs, crashtest's own annotations,
 // and conditions whose status is False: whether a False condition is still
 // listed depends on the object's history, not on its current state).
 // Keys look like "Pod default/demo-0-prefill-0-0".
@@ -52,7 +52,7 @@ func clean(m map[string]any) {
 		}
 		if ann, ok := md["annotations"].(map[string]any); ok {
 			for a := range ann {
-				if strings.HasPrefix(a, "faultlab.dev/") {
+				if strings.HasPrefix(a, "crashtest.dev/") {
 					delete(ann, a)
 				}
 			}

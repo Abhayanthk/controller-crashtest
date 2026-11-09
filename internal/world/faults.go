@@ -59,7 +59,7 @@ func (f failOnce) Before(_ *Conn, call Call) (bool, error) {
 	if call.N != int(f) {
 		return false, nil
 	}
-	return true, apierrors.NewInternalError(errors.New("faultlab: injected server error"))
+	return true, apierrors.NewInternalError(errors.New("crashtest: injected server error"))
 }
 
 // ConflictOnce answers the first update or patch of every object with
@@ -129,8 +129,8 @@ func (f *Interrupt) Fired() (bool, error) {
 }
 
 // TouchedAnnotation is what the pretend "other writer" changes. State
-// snapshots ignore every annotation under faultlab.dev/.
-const TouchedAnnotation = "faultlab.dev/touched"
+// snapshots ignore every annotation under crashtest.dev/.
+const TouchedAnnotation = "crashtest.dev/touched"
 
 // touch plays another writer: it changes an annotation, so the object's
 // resourceVersion moves on and watchers see an update.

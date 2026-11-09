@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-// QueueProbe lets faultlab see inside a client-go style controller: one with
+// QueueProbe lets crashtest see inside a client-go style controller: one with
 // a workqueue field and a sync function field, like kthena's controllers and
 // Kubernetes' sample-controller. It tells the runner when the controller is
 // idle, counts reconciles and errors, and can queue everything again.
@@ -25,14 +25,14 @@ type QueueProbe struct {
 }
 
 // WatchQueue replaces the controller's work queue (queueField) and wraps its
-// sync function (syncField, optional) so faultlab can watch them. Both are
+// sync function (syncField, optional) so crashtest can watch them. Both are
 // usually unexported, so it sets them through reflection. Call it after the
 // controller is built and before it runs. If kthena renames a field, this
 // returns an error naming it.
 func WatchQueue(name string, ctrl any, queueField, syncField string) (*QueueProbe, error) {
 	v := reflect.ValueOf(ctrl)
 	if v.Kind() != reflect.Pointer || v.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("faultlab: WatchQueue needs a pointer to a controller struct, got %T", ctrl)
+		return nil, fmt.Errorf("crashtest: WatchQueue needs a pointer to a controller struct, got %T", ctrl)
 	}
 	limiter := workqueue.DefaultTypedControllerRateLimiter[any]()
 	p := &QueueProbe{name: name, q: &probeQueue{
@@ -46,7 +46,7 @@ func WatchQueue(name string, ctrl any, queueField, syncField string) (*QueueProb
 		return nil, err
 	}
 	if !reflect.TypeOf(p.q).AssignableTo(qf.Type()) {
-		return nil, fmt.Errorf("faultlab: %T.%s is a %s; faultlab's queue does not fit it", ctrl, queueField, qf.Type())
+		return nil, fmt.Errorf("crashtest: %T.%s is a %s; crashtest's queue does not fit it", ctrl, queueField, qf.Type())
 	}
 	if old, ok := qf.Interface().(interface{ ShutDown() }); ok && !qf.IsNil() {
 		old.ShutDown()
@@ -61,7 +61,7 @@ func WatchQueue(name string, ctrl any, queueField, syncField string) (*QueueProb
 		return nil, err
 	}
 	if sf.Kind() != reflect.Func || sf.IsNil() {
-		return nil, fmt.Errorf("faultlab: %T.%s is not a function that is set", ctrl, syncField)
+		return nil, fmt.Errorf("crashtest: %T.%s is not a function that is set", ctrl, syncField)
 	}
 	sync := reflect.ValueOf(sf.Interface())
 	sf.Set(reflect.MakeFunc(sf.Type(), func(args []reflect.Value) []reflect.Value {
@@ -76,7 +76,7 @@ func WatchQueue(name string, ctrl any, queueField, syncField string) (*QueueProb
 func field(v reflect.Value, name string) (reflect.Value, error) {
 	f := v.Elem().FieldByName(name)
 	if !f.IsValid() {
-		return reflect.Value{}, fmt.Errorf("faultlab: %s has no field %q; the controller changed, update its target", v.Type(), name)
+		return reflect.Value{}, fmt.Errorf("crashtest: %s has no field %q; the controller changed, update its target", v.Type(), name)
 	}
 	return reflect.NewAt(f.Type(), unsafe.Pointer(f.UnsafeAddr())).Elem(), nil
 }

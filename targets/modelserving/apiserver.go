@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // What the real API server does for ModelServing that a fake doesn't:
@@ -79,7 +79,7 @@ func admit(op world.Op, obj, old runtime.Object) error {
 		return err
 	}
 	req := &admissionv1.AdmissionRequest{
-		UID:       "faultlab",
+		UID:       "crashtest",
 		Kind:      metav1.GroupVersionKind{Group: gv.Group, Version: gv.Version, Kind: "ModelServing"},
 		Resource:  metav1.GroupVersionResource{Group: gv.Group, Version: gv.Version, Resource: "modelservings"},
 		Name:      m.GetName(),

@@ -9,8 +9,8 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/toy"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/toy"
 )
 
 func TestMain(m *testing.M) {

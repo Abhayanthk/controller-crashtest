@@ -37,7 +37,7 @@ type Fake interface {
 	PrependWatchReactor(resource string, reaction kt.WatchReactionFunc)
 }
 
-var errDead = apierrors.NewServiceUnavailable("faultlab: this controller process is gone")
+var errDead = apierrors.NewServiceUnavailable("crashtest: this controller process is gone")
 
 // Connect opens a connection for a new controller process.
 func (w *World) Connect() *Conn {
@@ -108,7 +108,7 @@ func (c *Conn) react(a kt.Action) (bool, runtime.Object, error) {
 	}
 	k := c.w.byGVR[gvr]
 	if k == nil {
-		return true, nil, fmt.Errorf("faultlab: %s is not served by this world; add it to the target's kinds", gvr)
+		return true, nil, fmt.Errorf("crashtest: %s is not served by this world; add it to the target's kinds", gvr)
 	}
 	ns := a.GetNamespace()
 	switch a := a.(type) {
@@ -155,7 +155,7 @@ func (c *Conn) react(a kt.Action) (bool, runtime.Object, error) {
 		}
 		return true, nil, c.w.delete(c.name, k, ns, a.Name, a.DeleteOptions)
 	}
-	return true, nil, fmt.Errorf("faultlab: %s %s is not supported", a.GetVerb(), resourceName(k, a.GetSubresource()))
+	return true, nil, fmt.Errorf("crashtest: %s %s is not supported", a.GetVerb(), resourceName(k, a.GetSubresource()))
 }
 
 func nsOr(ns, fallback string) string {
@@ -196,7 +196,7 @@ func (c *Conn) watch(a kt.Action) (bool, watch.Interface, error) {
 	}
 	k := c.w.byGVR[a.GetResource()]
 	if k == nil {
-		return true, nil, fmt.Errorf("faultlab: %s is not served by this world; add it to the target's kinds", a.GetResource())
+		return true, nil, fmt.Errorf("crashtest: %s is not served by this world; add it to the target's kinds", a.GetResource())
 	}
 	var sel labels.Selector
 	var bookmark runtime.Object

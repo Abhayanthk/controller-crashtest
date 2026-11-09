@@ -77,7 +77,7 @@ sync-function field. Look them up in the controller's source.
 Scenario helpers act like a person with kubectl: `w.Create`, `world.Change`
 (edit the latest copy), `w.Delete`, `w.RestartContainer`.
 
-**5. Register it** in `cmd/faultlab/targets.go`:
+**5. Register it** in `cmd/crashtest/targets.go`:
 
 ```go
 var targets = []lab.Target{
@@ -97,7 +97,7 @@ Start with `-check clean` until every scenario settles, then run everything.
 ## When something fails
 
 ```bash
-./bin/faultlab trace -target mycontroller -scenario scale-down -fault crash:3
+./bin/crashtest trace -target mycontroller -scenario scale-down -fault crash:3
 ```
 
 prints every API call of that one case, then how its end state differs from a

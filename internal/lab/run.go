@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // Plan says what to break in a run.

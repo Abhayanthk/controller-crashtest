@@ -1,9 +1,9 @@
-// Command faultlab breaks kthena's controllers on purpose and checks that
+// Command crashtest breaks kthena's controllers on purpose and checks that
 // they still end up right.
 //
-//	faultlab list                         targets, scenarios and checks
-//	faultlab run [flags]                  run the checks, print a summary, save a report
-//	faultlab trace -scenario S [-fault F] run one case and print every API call
+//	crashtest list                         targets, scenarios and checks
+//	crashtest run [flags]                  run the checks, print a summary, save a report
+//	crashtest trace -scenario S [-fault F] run one case and print every API call
 package main
 
 import (
@@ -22,18 +22,18 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/checks"
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/report"
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/checks"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/report"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
-const usage = `faultlab breaks kthena's controllers on purpose and checks that they recover.
+const usage = `crashtest breaks kthena's controllers on purpose and checks that they recover.
 
 Usage:
-  faultlab list                          show targets, scenarios and checks
-  faultlab run   [flags]                 run checks; see "faultlab run -h"
-  faultlab trace -scenario S [-fault F]  run one case and print every API call
+  crashtest list                          show targets, scenarios and checks
+  crashtest run   [flags]                 run checks; see "crashtest run -h"
+  crashtest trace -scenario S [-fault F]  run one case and print every API call
                                          F is crash:K, error:K or conflict
 `
 
@@ -59,7 +59,7 @@ func main() {
 		os.Exit(2)
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "faultlab:", err)
+		fmt.Fprintln(os.Stderr, "crashtest:", err)
 		os.Exit(1)
 	}
 }
@@ -74,7 +74,7 @@ func silenceKlog() {
 	klog.SetOutput(io.Discard)
 }
 
-// showKlog sends the controllers' logs to stdout, between faultlab's lines.
+// showKlog sends the controllers' logs to stdout, between crashtest's lines.
 func showKlog(v int) {
 	fs := flag.NewFlagSet("klog", flag.ContinueOnError)
 	klog.InitFlags(fs)
@@ -103,7 +103,7 @@ func findTarget(name string) (lab.Target, error) {
 			return t, nil
 		}
 	}
-	return nil, fmt.Errorf("no target %q (see faultlab list)", name)
+	return nil, fmt.Errorf("no target %q (see crashtest list)", name)
 }
 
 func findScenario(t lab.Target, name string) (lab.Scenario, error) {
@@ -112,7 +112,7 @@ func findScenario(t lab.Target, name string) (lab.Scenario, error) {
 			return s, nil
 		}
 	}
-	return lab.Scenario{}, fmt.Errorf("target %s has no scenario %q (see faultlab list)", t.Name(), name)
+	return lab.Scenario{}, fmt.Errorf("target %s has no scenario %q (see crashtest list)", t.Name(), name)
 }
 
 func split(s string) []string {
@@ -133,7 +133,7 @@ func run(args []string) error {
 	parallel := fs.Int("parallel", 2*runtime.NumCPU(), "runs at the same time")
 	retries := fs.Int("retries", 2, "extra runs of a failing case, to tell real from flaky")
 	outDir := fs.String("out", "results", "folder for reports")
-	inProcess := fs.Bool("inprocess", false, "run every case in this process (a controller panic then stops faultlab)")
+	inProcess := fs.Bool("inprocess", false, "run every case in this process (a controller panic then stops crashtest)")
 	timeout := fs.Duration("timeout", lab.DefaultOptions.Timeout, "give up when a controller does not settle within this")
 	_ = fs.Parse(args)
 
@@ -164,7 +164,7 @@ func run(args []string) error {
 	if len(names) == 0 {
 		chosen = checks.All
 	} else if len(chosen) != len(names) {
-		return fmt.Errorf("unknown check in %q (see faultlab list)", *checkList)
+		return fmt.Errorf("unknown check in %q (see crashtest list)", *checkList)
 	}
 
 	opts := lab.DefaultOptions
@@ -177,7 +177,7 @@ func run(args []string) error {
 		}
 	}
 	rep := report.New(t.Name(), scenarios, chosen)
-	fmt.Printf("faultlab: %d scenarios, checks %s, %d at a time\n\n", len(scenarios), checkNames(chosen), *parallel)
+	fmt.Printf("crashtest: %d scenarios, checks %s, %d at a time\n\n", len(scenarios), checkNames(chosen), *parallel)
 	suite := &checks.Suite{Run: runner, Checks: names, Parallel: *parallel, Retries: *retries,
 		Progress: func(line string) { fmt.Println("  " + line) }}
 	if r, ok := t.(lab.Renamer); ok {
@@ -214,8 +214,8 @@ func isTerminal() bool {
 	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }
 
-// childRunner runs each case in a new faultlab process, so a controller that
-// panics or hangs becomes a finding instead of taking faultlab down.
+// childRunner runs each case in a new crashtest process, so a controller that
+// panics or hangs becomes a finding instead of taking crashtest down.
 func childRunner(target string, opts lab.Options) checks.Runner {
 	self, err := os.Executable()
 	if err != nil {
@@ -243,7 +243,7 @@ func childRunner(target string, opts lab.Options) checks.Runner {
 		case errors.Is(ctx.Err(), context.DeadlineExceeded):
 			out.Problem = fmt.Sprintf("the run did not finish within %s; the controller may be stuck", limit)
 		case runErr == nil:
-			out.Problem = "faultlab: could not read the run's result: " + strings.TrimSpace(clip(stdout.String(), 500))
+			out.Problem = "crashtest: could not read the run's result: " + strings.TrimSpace(clip(stdout.String(), 500))
 		default:
 			out.Problem = checks.ProcessCrashed + " (" + runErr.Error() + ")\n" + crashText(stderr.String())
 			if altered := strings.Index(stdout.String(), "CACHE "); altered >= 0 {

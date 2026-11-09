@@ -1,13 +1,17 @@
-# kthena-faultlab
+# controller-crashtest
 
-Breaks [kthena](https://github.com/volcano-sh/kthena)'s Kubernetes controllers
-on purpose (crashes, failed API calls, write conflicts, changes in the middle
-of a rollout) and checks that they still end up right.
+Crash-tests Kubernetes controllers: breaks them on purpose (crashes, failed
+API calls, write conflicts, changes in the middle of a rollout) at every
+write they make, and checks that they still end up right.
 
-It runs kthena's **real controller code**, started the same way
-`kthena-controller-manager` starts it, against an in-memory Kubernetes API
-server that follows the rules a real one does. No cluster needed; a run takes
-about two seconds.
+It runs a controller's **real code**, started the same way its manager
+starts it, against an in-memory Kubernetes API server that follows the rules
+a real one does. No cluster needed; a run takes about two seconds.
+
+The first target is [kthena](https://github.com/volcano-sh/kthena)'s
+ModelServing controller (kthena is a subproject of CNCF's Volcano). Any controller built on client-go
+with a work queue can be added (see
+[docs/adding-a-controller.md](docs/adding-a-controller.md)).
 
 ## Why
 
@@ -19,7 +23,7 @@ until they match. In production it must survive things unit tests rarely try:
 - a **409 Conflict** because someone else changed the object;
 - the user **changing their mind mid-way** (a rollback during a rollout).
 
-faultlab tries all of them, at **every write** the controller makes, and
+crashtest tries all of them, at **every write** the controller makes, and
 compares the end state with a run that had no faults. That comparison is the
 test: no hand-written expected values.
 
@@ -36,7 +40,7 @@ make run ARGS="-scenario rolling-update -check crash"
 ```
 
 ```bash
-./bin/faultlab trace -scenario role-rolling-update -fault crash:4
+./bin/crashtest trace -scenario role-rolling-update -fault crash:4
 ```
 
 `make run` (about 7 minutes: 31 scenarios, about 1,700 runs) prints a table
@@ -59,7 +63,7 @@ Every run is a separate process with client-go's cache mutation detector on,
 so a panic, or a write to the informer cache, becomes a finding too.
 
 [docs/how-it-works.md](docs/how-it-works.md) explains the pretend cluster,
-how faultlab knows the controller is done, and how it avoids false alarms.
+how crashtest knows the controller is done, and how it avoids false alarms.
 
 ## Findings in kthena
 
@@ -79,12 +83,12 @@ real cluster. Details and reproduce commands in
 ## Layout
 
 ```text
-cmd/faultlab/          the command: list, run, trace
+cmd/crashtest/          the command: list, run, trace
 internal/world/        the pretend cluster: API server rules, faults, kubelet, call log, snapshots
 internal/lab/          one run of one scenario under one fault; sees inside the controller's queue
 internal/checks/       the checks: turn runs into pass, warn or fail
 internal/report/       the terminal summary and report.json
-internal/toy/          a tiny controller with planted bugs: the tests for faultlab itself
+internal/toy/          a tiny controller with planted bugs: the tests for crashtest itself
 targets/modelserving/  kthena's ModelServing controller: how to start it, and its scenarios
 docs/                  how it works, adding a controller, findings
 ```
@@ -112,6 +116,6 @@ goes back to the version in `go.mod`.
 [Sieve](https://github.com/sieve-project/sieve) (OSDI '22) and
 [Acto](https://github.com/xlab-uiuc/acto) (SOSP '23) test operators on a real
 cluster; [Kamera](https://github.com/tgoodwin/kamera) simulates
-controller-runtime controllers in-process. faultlab is in-process like Kamera
+controller-runtime controllers in-process. crashtest is in-process like Kamera
 and borrows Sieve's idea of comparing against a run without faults, for
 client-go controllers like kthena's.

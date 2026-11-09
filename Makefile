@@ -1,6 +1,6 @@
-# kthena-faultlab. `make help` lists the targets.
+# controller-crashtest. `make help` lists the targets.
 
-BIN    := bin/faultlab
+BIN    := bin/crashtest
 KTHENA ?= ../kthena
 REF    ?= main
 CRD    := charts/kthena/charts/workload/crds/workload.serving.volcano.sh_modelservings.yaml
@@ -10,8 +10,8 @@ CRD    := charts/kthena/charts/workload/crds/workload.serving.volcano.sh_modelse
 help: ## show this list
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-15s %s\n", $$1, $$2}'
 
-build: ## build bin/faultlab
-	go build -o $(BIN) ./cmd/faultlab
+build: ## build bin/crashtest
+	go build -o $(BIN) ./cmd/crashtest
 
 run: build ## run every check on every scenario (pass flags with ARGS="-scenario create")
 	./$(BIN) run $(ARGS)
@@ -19,7 +19,7 @@ run: build ## run every check on every scenario (pass flags with ARGS="-scenario
 list: build ## list targets, scenarios and checks
 	./$(BIN) list
 
-test: ## faultlab's own tests (a toy controller with planted bugs)
+test: ## crashtest's own tests (a toy controller with planted bugs)
 	go test ./...
 
 lint: ## gofmt and go vet

@@ -1,4 +1,4 @@
-// Package modelserving is the faultlab target for kthena's ModelServing
+// Package modelserving is the crashtest target for kthena's ModelServing
 // controller (github.com/volcano-sh/kthena/pkg/model-serving-controller).
 //
 // The controller is started exactly as kthena-controller-manager starts it
@@ -24,8 +24,8 @@ import (
 	kthenafake "github.com/volcano-sh/kthena/client-go/clientset/versioned/fake"
 	workloadv1alpha1 "github.com/volcano-sh/kthena/pkg/apis/workload/v1alpha1"
 
-	"github.com/abhayanthk/kthena-faultlab/internal/lab"
-	"github.com/abhayanthk/kthena-faultlab/internal/world"
+	"github.com/abhayanthk/controller-crashtest/internal/lab"
+	"github.com/abhayanthk/controller-crashtest/internal/world"
 )
 
 // workers matches kthena-controller-manager's --workers default.
