@@ -338,6 +338,9 @@ func trace(args []string) error {
 	for _, c := range out.Controllers {
 		fmt.Printf("%s: %d reconciles, %d failed %s\n", c.Name, c.Reconciles, c.Errors, c.LastError)
 	}
+	for name, g := range out.Gauges {
+		fmt.Printf("gauge %s: lowest %d, highest %d\n", name, g.Min, g.Max)
+	}
 	if *fault != "" {
 		// An interrupted run is compared with one that made the second
 		// change after the first settled.

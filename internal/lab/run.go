@@ -287,10 +287,20 @@ func (r *runner) start() (Controller, *world.Conn, error) {
 	return c, conn, nil
 }
 
+// stopLast stops the newest process and waits (up to 5 s) until none of
+// its reconciles is still running, so nothing of it overlaps the next one.
 func (r *runner) stopLast() {
-	if n := len(r.procs); n > 0 {
-		r.procs[n-1].conn.Close()
-		r.procs[n-1].cancel()
+	n := len(r.procs)
+	if n == 0 {
+		return
+	}
+	p := r.procs[n-1]
+	p.conn.Close()
+	p.cancel()
+	if d, ok := p.c.(interface{ Drained() bool }); ok {
+		for deadline := time.Now().Add(5 * time.Second); !d.Drained() && time.Now().Before(deadline); {
+			time.Sleep(5 * time.Millisecond)
+		}
 	}
 }
 

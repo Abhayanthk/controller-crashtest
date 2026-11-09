@@ -320,7 +320,14 @@ func judgeFault(j job, out *lab.Outcome) Result {
 			want, got = j.rename(want), j.rename(got)
 		}
 		diffs := world.Diff(want, got)
-		worse := worseGauges(j.ref.Gauges, out.Gauges)
+		var worse []string
+		// Gauges compare runs of the same change with and without a fault.
+		// The interrupt check's reference makes the two changes one after
+		// the other, passing through states (e.g. 3 replicas mid-rollout)
+		// an interleaved run never has, so its gauges are not comparable.
+		if j.check != "interrupt" {
+			worse = worseGauges(j.ref.Gauges, out.Gauges)
+		}
 		switch {
 		case len(diffs) > 0:
 			r.Status, r.Summary = Fail, fmt.Sprintf("end state differs from the run without faults (%d differences)", len(diffs))

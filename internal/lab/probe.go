@@ -99,6 +99,16 @@ func (p *QueueProbe) Busy(horizon time.Duration) (bool, string) { return p.q.bus
 // Resync implements Controller.
 func (p *QueueProbe) Resync() { p.q.resync() }
 
+// Drained reports whether no reconcile is running. After a process is
+// stopped, the runner waits for this before starting the next one: a real
+// crashed process runs nothing, and kthena's constructor writes to
+// client-go's global scheme, which a still-running reconcile reads.
+func (p *QueueProbe) Drained() bool {
+	p.q.mu.Lock()
+	defer p.q.mu.Unlock()
+	return p.q.inFlight == 0
+}
+
 // Stats implements Controller.
 func (p *QueueProbe) Stats() Stats {
 	p.mu.Lock()
