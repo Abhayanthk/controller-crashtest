@@ -19,6 +19,7 @@ not heal; *low* = wasted work, noise or a cosmetic leak.
 | F3 | The status is written on every reconcile, even when nothing changed | low | resync, restart |
 | F4 | `revisionHistoryLimit` is never enforced; old ControllerRevisions are deleted all-or-nothing, depending on timing | low | crash, clean runs |
 | F5 | After a restart mid Role rollout, replacements are created while the old pods still terminate, failing with `AlreadyExists` until they are gone | low | crash |
+| F6 | One failed API call cancels crash recovery: the Role (or ServingGroup) is never recreated | medium | api-error |
 
 ---
 
@@ -77,6 +78,10 @@ the re-queue in `DeleteRole` before the first early return; or have the
 restarted process record Role instances whose pods are all terminating as
 Deleting.
 
+**Related, not the same:** [volcano-sh/kthena#1957](https://github.com/volcano-sh/kthena/issues/1957)
+(open) is the opposite failure in the same handler: a late delete event
+recovers a Role again and deletes its healthy replacement.
+
 ## F2. A restart during scale-to-zero leaves the status stuck (medium)
 
 **What happens.** A ModelServing with 2 ServingGroups is scaled to 0. The
@@ -103,6 +108,11 @@ resets the replica counters and `observedGeneration` only when
 `Progressing` to `Available`. Without a restart the same controller writes
 the right status earlier, while the groups are still in its memory as
 Deleting.
+
+**Related, not the same:** [volcano-sh/kthena#1761](https://github.com/volcano-sh/kthena/issues/1761)
+(closed) made this branch reachable, so a ModelServing created at 0 gets a
+status at all. The gap here is inside the branch: what an earlier process
+wrote is never corrected.
 
 **Who reads it.** ModelBooster treats a ModelServing as active only if
 `Available=True` (`pkg/model-booster-controller/controller/model_booster_controller.go:246`),
@@ -155,6 +165,48 @@ identity check keeps it safe; the cost is error noise and backoff.
 ```bash
 ./bin/faultlab trace -scenario role-rolling-update -fault crash:4
 ```
+
+## F6. One failed API call cancels crash recovery (medium)
+
+**What happens.** A container in a ModelServing pod crashes and restarts.
+With `recoveryPolicy: RoleRecreate` (the default) kthena must recreate every
+pod of that Role; the API docs say this is "to ensure all pods/containers in
+the group will be started in the same time". kthena tries to delete the pod
+once. If that one delete fails (a timeout, 429 throttling, an API server
+restart), it never tries again: as soon as the restarted container is Ready,
+the pod is treated as healthy, and the Role is never recreated.
+`ServingGroupRecreate` loses its recovery the same way.
+
+**Reproduce.**
+
+```bash
+./bin/faultlab trace -scenario recover-role -fault error:0
+```
+
+```text
+kubelet       update  pods  default/demo-0-decode-0-0   updated   <- container crashed, pod not Ready
+controller-1  delete  pods  default/demo-0-decode-0-0   error: Internal error occurred  [API error on write 0]
+controller-1  update  modelservings/status ...          updated
+kubelet       update  pods  default/demo-0-decode-0-0   updated   <- restarted container Ready again
+(nothing more: the pod keeps restartCount 1; the Role was not recreated)
+```
+
+In-process 3 of 3 runs; in the sweep 2 of 3 (`recover-role`) and 1 of 3
+(`recover-group`), because it depends on whether another not-Ready update
+arrives before the pod is Ready again.
+
+**Why.** `handleErrorPod` (`model_serving_controller.go:2147`) starts a
+goroutine, `handlePodAfterGraceTime`, that makes the one delete. On error it
+logs `cannot delete pod ... when it error` and returns: no retry, no
+re-queue, and the reconcile loop doesn't know a recovery is pending. Once the
+pod is Ready again, `updatePod` sends it to `handleReadyPod`, because Ready
+is checked before unexpected restarts (`:386`). With
+`restartGracePeriodSeconds > 0` the same goroutine sleeps first, so a
+controller restart during that sleep loses the recovery too.
+
+**Impact.** For a one-pod Role, little: the container restarted anyway. For
+a Role with workers (multi-node inference), the entry and its workers no
+longer restart together, which is what `RoleRecreate` exists for.
 
 ---
 

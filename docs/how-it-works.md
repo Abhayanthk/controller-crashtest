@@ -103,6 +103,14 @@ check tries every point where a real crash could leave half-done work.
 Writes that change nothing are reported as **warn** (wasted API calls), writes
 that change state on a settled cluster as **fail**.
 
+**Gauges** catch what an end state can't: a target measures numbers after
+every change while the controller works. For ModelServing these are
+*serving ServingGroups* (every role has an instance whose pods are all Ready
+and none is terminating) and *pods*. A crash, API-error or conflict run fails
+if its lowest serving count is below the clean run's, or its highest pod
+count above it: the fault made the rollout less safe or more expensive, even
+if it ended right.
+
 ## 5. Each run is its own process
 
 `faultlab run` starts every run as a child process (`faultlab case ...`):
@@ -120,6 +128,14 @@ A false alarm sent to kthena costs trust, so:
 
 - the end state is cleaned before comparing: uids, resourceVersions,
   timestamps and faultlab's own annotations differ between any two runs;
+- conditions whose status is False are not compared: whether an old False
+  condition is still listed depends on history, not on the current state;
+- the interrupt check names ServingGroups by order (first, second, ...),
+  because kthena may legitimately keep a different ordinal when a scale-down
+  arrives mid-rollout; it also ignores gauges, since its reference passes
+  through states (a 3-replica rollout) the interrupted run never has;
+- after a crash, the old process's last reconcile must finish before the
+  next process starts, as in a real crash;
 - the scenario's and the kubelet's own writes are never counted or faulted;
 - every failing case is run 2 more times: **fail** means it failed every time,
   **flaky** means only sometimes (timing-dependent: real, but look closer);

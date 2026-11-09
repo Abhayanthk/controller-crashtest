@@ -14,8 +14,8 @@ import (
 
 // State is what a run built: every object of the kinds marked Compare,
 // cleaned of the values that differ between two correct runs anyway
-// (uids, resourceVersions, timestamps, faultlab's own annotations, and
-// conditions whose status is False: whether a False condition is still
+// (uids, resourceVersions, timestamps, pod IPs, faultlab's own annotations,
+// and conditions whose status is False: whether a False condition is still
 // listed depends on the object's history, not on its current state).
 // Keys look like "Pod default/demo-0-prefill-0-0".
 type State map[string]map[string]any
@@ -62,6 +62,10 @@ func clean(m map[string]any) {
 		}
 	}
 	if st, ok := m["status"].(map[string]any); ok {
+		// Pod and host IPs come from the network, not the controller.
+		for _, f := range []string{"podIP", "podIPs", "hostIP", "hostIPs"} {
+			delete(st, f)
+		}
 		if conds, ok := st["conditions"].([]any); ok {
 			kept := []any{}
 			for _, c := range conds {
