@@ -3,6 +3,9 @@
 Run against kthena `main` at
 [`22a74a5`](https://github.com/volcano-sh/kthena/commit/22a74a588080) (2026-11-09),
 the version pinned in `go.mod`. Line numbers below refer to that commit.
+Final run: 31 scenarios, 7 checks, 1,719 runs, 6 min 34 s; every failing
+case in it belongs to F1, F2, F4 or F6 (F3 shows as warnings; F5 only in
+traces).
 
 None of these has been filed upstream yet. Each one still needs proof on a
 real cluster (kind) before it is reported; faultlab's pretend cluster is
@@ -55,7 +58,20 @@ kubelet       delete  pods   default/demo-0-prefill-0-1   deleted
 controller-2  create  pods   default/demo-0-prefill-0-0   created   <- only after faultlab forces a reconcile
 ```
 
-Fails in all 3 runs of crash points 5 and 13.
+Fails in all 3 runs of crash points 5, 13 and 14, in two shapes:
+
+- **Crash at 13 or 14** (instance 0 being replaced, the last step): the
+  rollout is otherwise done, but instance 0's pods are missing.
+- **Crash at 5** (instance 1 being replaced, the first step): instance 1's
+  pods are missing, and the rollout **deadlocks**. The status says
+  `CoordinatedRoleRolloutBlocked: Role prefill has started 1 of 2 formal
+  target replicas and reached the current maxSkew allowance of 1`, so the
+  missing instance counts as started, and instance 0 is never moved off the
+  old image. Half the capacity is gone and the update never finishes.
+
+```bash
+./bin/faultlab trace -scenario coordinated-roles -fault crash:5
+```
 
 **Why** (with `-klog 4`, the controller's own log shows each step):
 
@@ -98,7 +114,7 @@ and another restart, for as long as the ModelServing stays at 0.
 ./bin/faultlab trace -scenario scale-to-zero -fault crash:9
 ```
 
-Fails in all 3 runs of 8 of the 17 crash points (every crash after the
+Fails in all 3 runs of 8 of the 18 crash points (every crash after the
 groups were deleted).
 
 **Why.** With no ServingGroups in memory, `updateModelServingStatusInRound`
@@ -191,9 +207,9 @@ kubelet       update  pods  default/demo-0-decode-0-0   updated   <- restarted c
 (nothing more: the pod keeps restartCount 1; the Role was not recreated)
 ```
 
-In-process 3 of 3 runs; in the sweep 2 of 3 (`recover-role`) and 1 of 3
-(`recover-group`), because it depends on whether another not-Ready update
-arrives before the pod is Ready again.
+In-process 3 of 3 runs. In the sweeps: `recover-role` 3 of 3 (final sweep)
+and 2 of 3 (earlier); `recover-group` 1 of 3 in one sweep. It depends on
+whether another not-Ready update of the pod arrives before it is Ready again.
 
 **Why.** `handleErrorPod` (`model_serving_controller.go:2147`) starts a
 goroutine, `handlePodAfterGraceTime`, that makes the one delete. On error it

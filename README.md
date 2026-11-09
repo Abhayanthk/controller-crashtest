@@ -39,8 +39,9 @@ make run ARGS="-scenario rolling-update -check crash"
 ./bin/faultlab trace -scenario role-rolling-update -fault crash:4
 ```
 
-`make run` prints a table (scenarios x checks) and the findings, and saves
-`results/<time>/report.json`. `trace` prints every API call of one case.
+`make run` (about 7 minutes: 31 scenarios, about 1,700 runs) prints a table
+(scenarios x checks) and the findings, and saves `results/<time>/report.json`.
+`trace` prints every API call of one case.
 
 ## What it checks
 
@@ -62,7 +63,18 @@ how faultlab knows the controller is done, and how it avoids false alarms.
 
 ## Findings in kthena
 
-See [docs/findings.md](docs/findings.md).
+On kthena `main` (2026-11-09). Not filed yet: each still needs proof on a
+real cluster. Details and reproduce commands in
+[docs/findings.md](docs/findings.md).
+
+| # | Finding | Severity |
+| --- | --- | --- |
+| F1 | A restart during a coordinated Role rollout leaves the Role instances it was replacing missing; at the first step the rollout deadlocks | high |
+| F2 | A restart during scale-to-zero leaves the status stuck (`replicas: 2`, `Available=False`) | medium |
+| F6 | One failed API call cancels crash recovery (`RoleRecreate` never happens) | medium |
+| F3 | The status is written on every reconcile | low |
+| F4 | `revisionHistoryLimit` is never enforced | low |
+| F5 | After a restart mid rollout, replacements are created while old pods still terminate | low |
 
 ## Layout
 
